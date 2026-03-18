@@ -65,13 +65,29 @@ async function startStreamableHTTPServer(): Promise<void> {
     console.log(`MCP server listening on http://localhost:${port}/mcp (colorpicker, dadjokes)`);
   });
 
+  let isShuttingDown = false;
+
   const shutdown = () => {
+    if (isShuttingDown) {
+      return;
+    }
+    isShuttingDown = true;
+
     console.log("Shutting down server...");
-    httpServer.closeIdleConnections?.(); 
+    const forceCloseTimer = setTimeout(() => {
+      console.warn("Forcing shutdown of open HTTP connections...");
+      httpServer.closeAllConnections?.();
+      process.exit(0);
+    }, 1000);
+
     httpServer.close(() => {
+      clearTimeout(forceCloseTimer);
       console.log("Server shut down");
       process.exit(0);
     });
+
+    httpServer.closeIdleConnections?.();
+    httpServer.closeAllConnections?.();
   };
 
   process.on("SIGINT", shutdown);

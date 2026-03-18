@@ -52,6 +52,7 @@ async function startStreamableHTTPServer(): Promise<void> {
   app.use(cors());
 
   app.all("/mcp", createMcpHandler(createColorPickerMcpServer));
+  app.all("/mcp/colorpicker", createMcpHandler(createColorPickerMcpServer));
   app.all("/mcp/dadjokes", createMcpHandler(createDadJokesMcpServer));
 
   const httpServer = app.listen(port, (err) => {

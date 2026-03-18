@@ -8,7 +8,7 @@
     "dev": "cross-env NODE_ENV=development concurrently \"cross-env INPUT=mcp-app.html vite build --watch\" \"cross-env INPUT=dad-jokes-mcp-app.html vite build --watch\" \"tsx --watch main.ts\"",
     "serve": "tsx main.ts",
     "serve:stdio": "tsx main.ts --stdio",
-    "start": "cross-env NODE_ENV=development npm run build && npm run serve"
+    "start": "node dist/main.js"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.0",

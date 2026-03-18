@@ -6,6 +6,7 @@ import cors from "cors";
 import type { Request, Response } from "express";
 import { createDadJokesMcpServer, registerDadJokesTools } from "./dad-jokes-server.js";
 import { createColorPickerMcpServer, registerColorPickerTools } from "./server.js";
+import { createDadJokes2McpServer } from "./dad-jokes/server.js";
 
 function createMcpHandler(createServer: () => McpServer) {
   return async (req: Request, res: Response) => {
@@ -54,6 +55,7 @@ async function startStreamableHTTPServer(): Promise<void> {
   app.all("/mcp", createMcpHandler(createColorPickerMcpServer));
   app.all("/mcp/colorpicker", createMcpHandler(createColorPickerMcpServer));
   app.all("/mcp/dadjokes", createMcpHandler(createDadJokesMcpServer));
+  app.all("/mcp/dadjokes2", createMcpHandler(createDadJokes2McpServer));
 
   const httpServer = app.listen(port, (err) => {
     if (err) {

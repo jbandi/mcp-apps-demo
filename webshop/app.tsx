@@ -31,29 +31,58 @@ function formatChf(value: number): string {
   return new Intl.NumberFormat("de-CH", { style: "currency", currency: "CHF" }).format(value);
 }
 
+function isSearchPayload(value: unknown): value is SearchPayload {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    typeof (value as SearchPayload).searchTerm === "string" &&
+    Array.isArray((value as SearchPayload).products)
+  );
+}
+
+function extractTextFromContentBlock(block: { text?: unknown }): string | null {
+  const t = block.text;
+  if (typeof t === "string") return t;
+  if (t && typeof t === "object" && "text" in t) {
+    const nested = (t as { text?: unknown }).text;
+    return typeof nested === "string" ? nested : null;
+  }
+  return null;
+}
+
+function parseSearchPayloadJson(raw: string): SearchPayload | null {
+  let s = raw.trim();
+  const fence = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/m.exec(s);
+  if (fence) s = fence[1].trim();
+  try {
+    const parsed = JSON.parse(s) as unknown;
+    return isSearchPayload(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function getSearchPayloadFromToolResult(result: {
   isError?: boolean;
-  content?: Array<{ type: string; text?: string }>;
+  structuredContent?: Record<string, unknown>;
+  content?: Array<{ type: string; text?: unknown }>;
 }): SearchPayload | null {
   if (result.isError) return null;
-  const textBlock = result.content?.find((c) => c.type === "text");
-  const raw = textBlock?.text;
-  if (typeof raw !== "string") return null;
-  try {
-    const parsed = JSON.parse(raw.trim()) as unknown;
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      "searchTerm" in parsed &&
-      "products" in parsed &&
-      typeof (parsed as SearchPayload).searchTerm === "string" &&
-      Array.isArray((parsed as SearchPayload).products)
-    ) {
-      return parsed as SearchPayload;
-    }
-  } catch {
-    /* ignore */
+
+  const sc = result.structuredContent;
+  if (sc && isSearchPayload(sc)) {
+    return sc;
   }
+
+  const textBlocks = result.content?.filter((c) => c.type === "text") ?? [];
+  for (const block of textBlocks) {
+    const raw = extractTextFromContentBlock(block);
+    if (raw) {
+      const parsed = parseSearchPayloadJson(raw);
+      if (parsed) return parsed;
+    }
+  }
+
   return null;
 }
 

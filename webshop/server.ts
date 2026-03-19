@@ -13,6 +13,12 @@ const SEARCH_URL = "https://web.transgourmet.ch/de/webshop/resources/articles/se
 const USER_AGENT = "MCP Web Shop App (demo)";
 const MAX_PRODUCT_RESULTS = 10;
 
+/** Declared so hosts (e.g. ChatGPT) can attach structured tool output to the MCP App; `content` stays for the model. */
+const webShopSearchOutputSchema = z.object({
+  searchTerm: z.string(),
+  products: z.array(z.unknown()),
+});
+
 interface ApiIcon {
   id: string;
   imgSrc: string;
@@ -153,11 +159,16 @@ function registerWebShopTools(server: McpServer): void {
       inputSchema: {
         searchTerm: z.string().min(1).describe("Product or category search term (e.g. milk, coffee)."),
       },
+      outputSchema: webShopSearchOutputSchema,
       _meta: { ui: { resourceUri } },
     },
     async ({ searchTerm }) => {
       const payload = await searchProducts(searchTerm);
       return {
+        structuredContent: {
+          searchTerm: payload.searchTerm,
+          products: payload.products,
+        },
         content: [
           {
             type: "text",

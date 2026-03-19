@@ -18,9 +18,12 @@
   },
   "include": [
     "src",
-    "server.ts",
     "vite.config.ts",
+    "dad-jokes/**/*.ts",
     "dad-jokes/**/*.tsx",
-    "dad-jokes/**/*.d.ts"
+    "dad-jokes/**/*.d.ts",
+    "colorpicker/**/*.ts",
+    "colorpicker/**/*.tsx",
+    "colorpicker/**/*.d.ts"
   ]
 }

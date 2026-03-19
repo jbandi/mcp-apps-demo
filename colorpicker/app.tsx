@@ -1,7 +1,7 @@
 import { useApp } from "@modelcontextprotocol/ext-apps/react";
 import { StrictMode, useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
-import styles from "./mcp-app.module.css";
+import styles from "./app.module.css";
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);

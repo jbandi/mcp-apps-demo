@@ -4,7 +4,7 @@
   "type": "module",
   "description": "MCP App — interactive color picker",
   "scripts": {
-    "build": "cross-env INPUT=mcp-app.html vite build && cross-env && cross-env INPUT=dad-jokes/app.html vite build && tsc -p tsconfig.server.json",
+    "build": "cross-env INPUT=colorpicker/app.html vite build && cross-env INPUT=dad-jokes/app.html vite build && tsc -p tsconfig.server.json",
     "dev": "cross-env NODE_ENV=development concurrently \"cross-env INPUT=mcp-app.html vite build --watch\" \"cross-env INPUT=dad-jokes-mcp-app.html vite build --watch\" \"tsx --watch main.ts\"",
     "serve": "tsx main.ts",
     "serve:stdio": "tsx main.ts --stdio",

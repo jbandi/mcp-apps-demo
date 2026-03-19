@@ -9,7 +9,7 @@ const DIST_DIR = import.meta.filename.endsWith(".ts")
   : import.meta.dirname;
 
 export function registerColorPickerTools(server: McpServer): void {
-  const resourceUri = "ui://color-picker/mcp-app.html";
+  const resourceUri = "ui://color-picker/app.html";
 
   registerAppTool(server,
     "color-picker",
@@ -31,7 +31,7 @@ export function registerColorPickerTools(server: McpServer): void {
     resourceUri,
     { mimeType: RESOURCE_MIME_TYPE },
     async (): Promise<ReadResourceResult> => {
-      const html = await fs.readFile(path.join(DIST_DIR, "mcp-app.html"), "utf-8");
+      const html = await fs.readFile(path.join(DIST_DIR, "app.html"), "utf-8");
       return {
         contents: [{ uri: resourceUri, mimeType: RESOURCE_MIME_TYPE, text: html }],
       };

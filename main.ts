@@ -4,7 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import cors from "cors";
 import type { Request, Response } from "express";
-import { createColorPickerMcpServer, registerColorPickerTools } from "./server.js";
+import { createColorPickerMcpServer } from "./colorpicker/server.js";
 import { createDadJokesMcpServer } from "./dad-jokes/server.js";
 
 function createMcpHandler(createServer: () => McpServer) {

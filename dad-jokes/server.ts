@@ -89,7 +89,7 @@ function registerDadJokesTools(server: McpServer): void {
   );
 }
 
-export function createDadJokes2McpServer(): McpServer {
+export function createDadJokesMcpServer(): McpServer {
   const server = new McpServer({
     name: "Dad Jokes MCP App",
     version: "1.0.0",

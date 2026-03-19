@@ -96,7 +96,7 @@ function DadJokesApp() {
 
   return (
     <main className={styles.main}>
-      <h2 className={styles.heading}>Dad Joke 2</h2>
+      <h2 className={styles.heading}>Dad Joke</h2>
 
       <div className={styles.jokeCard}>
         {loading && joke === null ? (

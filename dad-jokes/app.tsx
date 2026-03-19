@@ -1,7 +1,22 @@
 import { useApp } from "@modelcontextprotocol/ext-apps/react";
 import { StrictMode, useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
-import styles from "./dad-jokes-app.module.css";
+import styles from "./app.module.css";
+
+function unwrapJokePayload(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed) as { text?: unknown };
+      if (typeof parsed.text === "string") {
+        return parsed.text;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return raw;
+}
 
 function getJokeText(
   result: { isError?: boolean; content?: Array<{ type: string; text?: string }> },
@@ -12,13 +27,12 @@ function getJokeText(
 
   const textBlock = result.content?.find((content) => content.type === "text");
   if (!textBlock) return null;
-  // In some cases, textBlock.text may itself be an object with a 'text' property
   if (typeof textBlock.text === "string") {
-    return textBlock.text;
+    return unwrapJokePayload(textBlock.text);
   }
   if (textBlock.text && typeof textBlock.text === "object" && "text" in textBlock.text) {
-    // @ts-ignore
-    return textBlock.text.text ?? null;
+    const nested = (textBlock.text as { text?: unknown }).text;
+    return typeof nested === "string" ? unwrapJokePayload(nested) : null;
   }
   return null;
 }

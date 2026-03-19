@@ -25,5 +25,5 @@
     "colorpicker/**/*.ts",
     "colorpicker/**/*.tsx",
     "colorpicker/**/*.d.ts"
-  ]
+, "vite-env.d.ts"  ]
 }

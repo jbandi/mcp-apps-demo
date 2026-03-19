@@ -11,7 +11,16 @@ function getJokeText(
   }
 
   const textBlock = result.content?.find((content) => content.type === "text");
-  return textBlock?.text ?? null;
+  if (!textBlock) return null;
+  // In some cases, textBlock.text may itself be an object with a 'text' property
+  if (typeof textBlock.text === "string") {
+    return textBlock.text;
+  }
+  if (textBlock.text && typeof textBlock.text === "object" && "text" in textBlock.text) {
+    // @ts-ignore
+    return textBlock.text.text ?? null;
+  }
+  return null;
 }
 
 function DadJokesApp() {

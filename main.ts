@@ -6,6 +6,7 @@ import cors from "cors";
 import type { Request, Response } from "express";
 import { createColorPickerMcpServer } from "./colorpicker/server.js";
 import { createDadJokesMcpServer } from "./dad-jokes/server.js";
+import { createWebShopMcpServer } from "./webshop/server.js";
 
 function createMcpHandler(createServer: () => McpServer) {
   return async (req: Request, res: Response) => {
@@ -44,13 +45,14 @@ async function startStreamableHTTPServer(): Promise<void> {
   app.all("/mcp", createMcpHandler(createColorPickerMcpServer));
   app.all("/mcp/colorpicker", createMcpHandler(createColorPickerMcpServer));
   app.all("/mcp/dadjokes", createMcpHandler(createDadJokesMcpServer));
+  app.all("/mcp/webshop", createMcpHandler(createWebShopMcpServer));
 
   const httpServer = app.listen(port, (err) => {
     if (err) {
       console.error("Failed to start server:", err);
       process.exit(1);
     }
-    console.log(`MCP server listening on http://localhost:${port}/mcp (colorpicker, dadjokes)`);
+    console.log(`MCP server listening on http://localhost:${port}/mcp (colorpicker, dadjokes, webshop)`);
   });
 
   let isShuttingDown = false;

@@ -24,6 +24,10 @@
     "dad-jokes/**/*.d.ts",
     "colorpicker/**/*.ts",
     "colorpicker/**/*.tsx",
-    "colorpicker/**/*.d.ts"
-, "vite-env.d.ts"  ]
+    "colorpicker/**/*.d.ts",
+    "webshop/**/*.ts",
+    "webshop/**/*.tsx",
+    "webshop/**/*.d.ts",
+    "vite-env.d.ts"
+  ]
 }

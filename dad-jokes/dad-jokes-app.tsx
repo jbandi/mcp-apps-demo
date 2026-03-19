@@ -1,36 +1,17 @@
 import { useApp } from "@modelcontextprotocol/ext-apps/react";
-import { StrictMode, useCallback, useEffect, useState } from "react";
+import { StrictMode, useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
 import styles from "./dad-jokes-app.module.css";
 
-const DAD_JOKE_API = "https://icanhazdadjoke.com";
-const USER_AGENT = "MCP Dad Jokes App (https://github.com/mcp-apps-dadjokes)";
-
-interface DadJokeResponse {
-  id: string;
-  joke: string;
-}
-
-interface SearchResponse {
-  results: DadJokeResponse[];
-}
-
-async function fetchRandomJoke(): Promise<string> {
-  const res = await fetch(`${DAD_JOKE_API}/search?limit=30`, {
-    headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-  });
-  if (!res.ok) throw new Error("Failed to fetch joke");
-  const data = (await res.json()) as SearchResponse;
-  const jokes = data.results ?? [];
-  if (jokes.length === 0) {
-    const singleRes = await fetch(DAD_JOKE_API, {
-      headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-    });
-    const single = (await singleRes.json()) as DadJokeResponse;
-    return single.joke;
+function getJokeText(
+  result: { isError?: boolean; content?: Array<{ type: string; text?: string }> },
+): string | null {
+  if (result.isError) {
+    return null;
   }
-  const picked = jokes[Math.floor(Math.random() * jokes.length)]!;
-  return picked.joke;
+
+  const textBlock = result.content?.find((content) => content.type === "text");
+  return textBlock?.text ?? null;
 }
 
 function DadJokesApp() {
@@ -38,6 +19,7 @@ function DadJokesApp() {
   const [loading, setLoading] = useState(true);
   const [fetchingNew, setFetchingNew] = useState(false);
   const [sent, setSent] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const { app, error } = useApp({
     appInfo: { name: "Dad Jokes", version: "1.0.0" },
@@ -46,10 +28,12 @@ function DadJokesApp() {
       app.onteardown = async () => ({});
       app.onerror = console.error;
       app.ontoolresult = (result) => {
-        if (result.isError) return;
-        const textBlock = result.content?.find((c) => c.type === "text");
-        if (textBlock && "text" in textBlock) {
-          setJoke(textBlock.text);
+        const jokeText = getJokeText(result);
+        if (jokeText) {
+          setJoke(jokeText);
+          setLoadError(null);
+        } else {
+          setLoadError("Failed to load joke.");
         }
         setLoading(false);
       };
@@ -57,21 +41,27 @@ function DadJokesApp() {
   });
 
   const loadJoke = useCallback(async () => {
+    if (!app) return;
+
     setFetchingNew(true);
+    setLoadError(null);
     try {
-      const newJoke = await fetchRandomJoke();
-      setJoke(newJoke);
+      const result = await app.callServerTool({ name: "dad-joke", arguments: {} });
+      const jokeText = getJokeText(result);
+
+      if (!jokeText) {
+        throw new Error("Tool did not return a joke");
+      }
+
+      setJoke(jokeText);
     } catch (e) {
       console.error("Failed to fetch joke:", e);
+      setLoadError("Failed to load joke.");
     } finally {
       setFetchingNew(false);
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    if (app && joke === null) loadJoke();
-  }, [app, joke, loadJoke]);
+  }, [app]);
 
   const handleSendToLLM = useCallback(async () => {
     if (!app || !joke) return;
@@ -101,6 +91,8 @@ function DadJokesApp() {
       <div className={styles.jokeCard}>
         {loading && joke === null ? (
           <p className={styles.loadingText}>Loading joke...</p>
+        ) : loadError ? (
+          <p className={styles.error}>{loadError}</p>
         ) : (
           <p className={styles.jokeText}>{joke ?? "No joke loaded"}</p>
         )}

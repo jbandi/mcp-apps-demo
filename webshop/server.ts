@@ -1,6 +1,7 @@
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
+import { Buffer } from "node:buffer";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -78,6 +79,10 @@ interface ProductCard {
 }
 
 const WEB_ORIGIN = "https://web.transgourmet.ch";
+const WEBPREVIEW_ORIGIN = "https://webpreview.transgourmet.ch";
+
+/** SVG byte cap per icon when inlining for MCP iframes (avoids huge payloads). */
+const MAX_INLINE_SVG_BYTES = 256 * 1024;
 
 function resolveMediaUrl(imgSrc: string): string {
   if (imgSrc.startsWith("http://") || imgSrc.startsWith("https://")) {
@@ -87,8 +92,14 @@ function resolveMediaUrl(imgSrc: string): string {
   return `${WEB_ORIGIN}${p}`;
 }
 
+function isEcoscoreIcon(icon: ApiIcon): boolean {
+  return (
+    icon.id.toLowerCase().startsWith("ecoscore") || icon.imgSrc.toLowerCase().includes("/ecoscore/")
+  );
+}
+
 function resolveIconImgUrl(icon: ApiIcon): string {
-  if (!icon.id.toLowerCase().startsWith("ecoscore")) {
+  if (!isEcoscoreIcon(icon)) {
     return resolveMediaUrl(icon.imgSrc);
   }
   const { imgSrc } = icon;
@@ -96,7 +107,7 @@ function resolveIconImgUrl(icon: ApiIcon): string {
     try {
       const u = new URL(imgSrc);
       if (u.hostname.includes("transgourmet.ch")) {
-        return `${WEB_ORIGIN}${u.pathname}${u.search}${u.hash}`;
+        return `${WEBPREVIEW_ORIGIN}${u.pathname}${u.search}${u.hash}`;
       }
     } catch {
       /* use fallback below */
@@ -104,7 +115,44 @@ function resolveIconImgUrl(icon: ApiIcon): string {
     return imgSrc;
   }
   const p = imgSrc.startsWith("/") ? imgSrc : `/${imgSrc}`;
-  return `${WEB_ORIGIN}${p}`;
+  return `${WEBPREVIEW_ORIGIN}${p}`;
+}
+
+/**
+ * ChatGPT and other MCP hosts run the UI in a locked-down iframe. Cross-origin SVGs in <img> often
+ * fail (strict img-src and/or CORP on the asset) even when the same URL works in a normal tab.
+ * Fetching on the server and returning a data: URL avoids a cross-origin image request in the iframe.
+ */
+async function svgUrlToDataUrlIfApplicable(imgUrl: string): Promise<string> {
+  if (!/\.svg(?:[?#]|$)/i.test(imgUrl)) return imgUrl;
+  try {
+    const res = await fetch(imgUrl, {
+      headers: {
+        Accept: "image/svg+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": USER_AGENT,
+      },
+    });
+    if (!res.ok) return imgUrl;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > MAX_INLINE_SVG_BYTES) return imgUrl;
+    return `data:image/svg+xml;base64,${buf.toString("base64")}`;
+  } catch {
+    return imgUrl;
+  }
+}
+
+async function inlineSvgIconsInProducts(products: ProductCard[]): Promise<ProductCard[]> {
+  return Promise.all(
+    products.map(async (p) => ({
+      ...p,
+      icons: await Promise.all(
+        p.icons.map(async (icon) => ({
+          ...icon,
+          imgUrl: await svgUrlToDataUrlIfApplicable(icon.imgUrl),
+        })),
+      ),
+    })),
+  );
 }
 
 function productImageUrl(celumId: number): string {
@@ -162,9 +210,10 @@ async function searchProducts(searchTerm: string): Promise<{ searchTerm: string;
   }
   const data = (await res.json()) as ApiSearchPayload;
   const raw = (data.searchResponse?.articles ?? []).slice(0, MAX_PRODUCT_RESULTS);
+  const products = await inlineSvgIconsInProducts(raw.map(mapArticle));
   return {
     searchTerm: searchTerm.trim(),
-    products: raw.map(mapArticle),
+    products,
   };
 }
 
@@ -220,6 +269,7 @@ function registerWebShopTools(server: McpServer): void {
                 resourceDomains: [
                   "https://web.transgourmet.ch",
                   "https://webshop.transgourmet.ch",
+                  "https://webpreview.transgourmet.ch",
                 ],
               },
             },

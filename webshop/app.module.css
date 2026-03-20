@@ -176,18 +176,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.iconUrlsDebug {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.62rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  color: var(--color-text-secondary);
-  line-height: 1.35;
-  word-break: break-all;
-  opacity: 0.9;
-}
-
 .priceRow {
   display: flex;
   flex-wrap: wrap;

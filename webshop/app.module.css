@@ -224,34 +224,6 @@
   font-weight: var(--font-weight-bold);
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  padding-top: 0.25rem;
-}
-
-.button {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: 0.9rem;
-  font-weight: var(--font-weight-bold);
-  color: #fff;
-  background: var(--color-accent);
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.button:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.button:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
 .empty {
   text-align: center;
   padding: 2rem 1rem;

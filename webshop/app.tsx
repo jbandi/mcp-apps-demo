@@ -154,10 +154,9 @@ function WebShopApp() {
   const [payload, setPayload] = useState<SearchPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
 
   const { app, error: connectError } = useApp({
-    appInfo: { name: "Transgourmet Web Shop", version: "1.0.0" },
+    appInfo: { name: "Transgourmet Webshop", version: "1.0.0" },
     capabilities: {},
     onAppCreated: (a) => {
       a.onteardown = async () => ({});
@@ -177,7 +176,7 @@ function WebShopApp() {
           setQuery(data.searchTerm);
           setError(null);
         } else {
-          setError("Search did not return product data.");
+          setError("Die Suche hat keine Produktdaten geliefert.");
         }
         setLoading(false);
       };
@@ -196,12 +195,12 @@ function WebShopApp() {
         });
         const data = getSearchPayloadFromToolResult(result);
         if (!data) {
-          throw new Error("Invalid response");
+          throw new Error("Ungültige Antwort");
         }
         setPayload(data);
       } catch (e) {
         console.error(e);
-        setError("Search failed. Try again.");
+        setError("Suche fehlgeschlagen. Bitte erneut versuchen.");
       } finally {
         setLoading(false);
       }
@@ -217,46 +216,21 @@ function WebShopApp() {
     [query, runSearch],
   );
 
-  const handleSendToLlm = useCallback(async () => {
-    if (!app || !payload?.products.length) return;
-    setSent(true);
-    try {
-      const lines = payload.products.map((p, i) => {
-        const price = p.isAction && p.actionPrice != null ? p.actionPrice : p.price;
-        return `${i + 1}. [${p.articleNumber}] ${p.brand ? `${p.brand} — ` : ""}${p.description} — ${formatChf(price)} (${p.packLabel})`;
-      });
-      const body = [
-        `Web shop search: "${payload.searchTerm}" (${payload.products.length} articles).`,
-        "",
-        ...lines,
-        "",
-        "Summarize options, call out any promotions, and suggest what to order for a small restaurant.",
-      ].join("\n");
-
-      await app.sendMessage({
-        role: "user",
-        content: [{ type: "text", text: body }],
-      });
-    } finally {
-      setTimeout(() => setSent(false), 2000);
-    }
-  }, [app, payload]);
-
   if (connectError) {
     return (
       <div className={styles.error}>
-        <strong>Error:</strong> {connectError.message}
+        <strong>Fehler:</strong> {connectError.message}
       </div>
     );
   }
   if (!app) {
-    return <div className={styles.loading}>Connecting...</div>;
+    return <div className={styles.loading}>Verbindung wird hergestellt …</div>;
   }
 
   return (
     <main className={styles.main}>
-      <h2 className={styles.heading}>Transgourmet Web Shop</h2>
-      <p className={styles.subtitle}>Search the Swiss wholesale assortment</p>
+      <h2 className={styles.heading}>Transgourmet Webshop</h2>
+      <p className={styles.subtitle}>Im Schweizer Grosshandels-Sortiment suchen</p>
 
       <form className={styles.searchRow} onSubmit={handleSubmit}>
         <input
@@ -264,12 +238,12 @@ function WebShopApp() {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. Milch, Kaffee, Tomaten"
+          placeholder="z. B. Milch, Kaffee, Tomaten"
           enterKeyHint="search"
           autoComplete="off"
         />
         <button className={styles.searchButton} type="submit" disabled={loading || !query.trim()}>
-          {loading ? "…" : "Search"}
+          {loading ? "…" : "Suchen"}
         </button>
       </form>
 
@@ -277,37 +251,28 @@ function WebShopApp() {
 
       {payload ? (
         <p className={styles.meta}>
-          {payload.products.length} result{payload.products.length === 1 ? "" : "s"} for &ldquo;
+          {payload.products.length}{" "}
+          {payload.products.length === 1 ? "Ergebnis" : "Ergebnisse"} für &ldquo;
           {payload.searchTerm}&rdquo;
         </p>
       ) : null}
 
       {payload && payload.products.length === 0 ? (
-        <p className={styles.empty}>No articles found. Try another term.</p>
+        <p className={styles.empty}>Keine Artikel gefunden. Versuchen Sie einen anderen Suchbegriff.</p>
       ) : null}
 
       {payload && payload.products.length > 0 ? (
-        <>
-          <div className={styles.grid}>
-            {payload.products.map((p) => (
-              <ProductCardView key={p.articleNumber} p={p} />
-            ))}
-          </div>
-          <div className={styles.actions}>
-            <button
-              className={styles.button}
-              type="button"
-              onClick={() => void handleSendToLlm()}
-              disabled={sent || !payload.products.length}
-            >
-              {sent ? "Sent!" : "Send results to LLM"}
-            </button>
-          </div>
-        </>
+        <div className={styles.grid}>
+          {payload.products.map((p) => (
+            <ProductCardView key={p.articleNumber} p={p} />
+          ))}
+        </div>
       ) : null}
 
       {!payload && !loading && !error ? (
-        <p className={styles.empty}>Enter a search term or open this tool from the assistant with a query.</p>
+        <p className={styles.empty}>
+          Geben Sie einen Suchbegriff ein, oder öffnen Sie dieses Tool im Assistenten mit einer Abfrage.
+        </p>
       ) : null}
     </main>
   );

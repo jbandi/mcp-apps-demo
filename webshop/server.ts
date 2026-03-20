@@ -11,10 +11,10 @@ const DIST_DIR = import.meta.filename.endsWith(".ts")
   : import.meta.dirname;
 
 const SEARCH_URL = "https://web.transgourmet.ch/de/webshop/resources/articles/search";
-const USER_AGENT = "MCP Web Shop App (demo)";
+const USER_AGENT = "MCP-Webshop-App (Demo)";
 const MAX_PRODUCT_RESULTS = 10;
 
-/** Declared so hosts (e.g. ChatGPT) can attach structured tool output to the MCP App; `content` stays for the model. */
+/** Damit Hosts (z. B. ChatGPT) strukturierte Tool-Ausgaben an die MCP-App hängen können; `content` bleibt fürs Modell. */
 const webShopSearchOutputSchema = z.object({
   searchTerm: z.string(),
   products: z.array(z.unknown()),
@@ -81,7 +81,7 @@ interface ProductCard {
 const WEB_ORIGIN = "https://web.transgourmet.ch";
 const WEBPREVIEW_ORIGIN = "https://webpreview.transgourmet.ch";
 
-/** SVG byte cap per icon when inlining for MCP iframes (avoids huge payloads). */
+/** Obergrenze für SVG-Grösse pro Icon beim Einbetten für MCP-Iframes (verhindert riesige Payloads). */
 const MAX_INLINE_SVG_BYTES = 256 * 1024;
 
 function resolveMediaUrl(imgSrc: string): string {
@@ -119,9 +119,9 @@ function resolveIconImgUrl(icon: ApiIcon): string {
 }
 
 /**
- * ChatGPT and other MCP hosts run the UI in a locked-down iframe. Cross-origin SVGs in <img> often
- * fail (strict img-src and/or CORP on the asset) even when the same URL works in a normal tab.
- * Fetching on the server and returning a data: URL avoids a cross-origin image request in the iframe.
+ * ChatGPT und andere MCP-Hosts laufen in einem abgeschotteten Iframe. Cross-Origin-SVGs in <img>
+ * schlagen oft fehl (strenges img-src und/oder CORP), obwohl dieselbe URL im normalen Tab funktioniert.
+ * Serverseitiges Abrufen und data:-URL vermeidet die Cross-Origin-Bildanfrage im Iframe.
  */
 async function svgUrlToDataUrlIfApplicable(imgUrl: string): Promise<string> {
   if (!/\.svg(?:[?#]|$)/i.test(imgUrl)) return imgUrl;
@@ -206,7 +206,7 @@ async function searchProducts(searchTerm: string): Promise<{ searchTerm: string;
     },
   });
   if (!res.ok) {
-    throw new Error(`Search failed: ${res.status}`);
+    throw new Error(`Suche fehlgeschlagen: ${res.status}`);
   }
   const data = (await res.json()) as ApiSearchPayload;
   const raw = (data.searchResponse?.articles ?? []).slice(0, MAX_PRODUCT_RESULTS);
@@ -224,11 +224,14 @@ function registerWebShopTools(server: McpServer): void {
     server,
     "web-shop-search",
     {
-      title: "Transgourmet Web Shop Search",
+      title: "Transgourmet-Webshopsuche",
       description:
-        "Searches the Transgourmet Switzerland web shop for articles by keyword. Opens an interactive product grid; results are also returned as structured JSON for the conversation.",
+        "Durchsucht den Transgourmet-Webshop (Schweiz) nach Artikeln per Stichwort. Öffnet ein interaktives Produktraster; die Ergebnisse werden zusätzlich als strukturiertes JSON für die Unterhaltung zurückgegeben.",
       inputSchema: {
-        searchTerm: z.string().min(1).describe("Product or category search term (e.g. milk, coffee)."),
+        searchTerm: z
+          .string()
+          .min(1)
+          .describe("Suchbegriff für Produkt oder Kategorie (z. B. Milch, Kaffee)."),
       },
       outputSchema: webShopSearchOutputSchema,
       _meta: { ui: { resourceUri } },
@@ -282,7 +285,7 @@ function registerWebShopTools(server: McpServer): void {
 
 export function createWebShopMcpServer(): McpServer {
   const server = new McpServer({
-    name: "Web Shop MCP App",
+    name: "Transgourmet-Webshop MCP-App",
     version: "1.0.0",
   });
   registerWebShopTools(server);

@@ -1,7 +1,14 @@
 import { useApp } from "@modelcontextprotocol/ext-apps/react";
 import { type FormEvent, StrictMode, useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import {
+  type CartOverview,
+  extractTextFromContentBlock,
+  formatChf,
+  getCartOverviewFromToolResult,
+} from "./cart-model";
 import styles from "./app.module.css";
+import { WebShopCartView } from "./WebShopCartView";
 
 interface ProductCard {
   articleNumber: string;
@@ -27,29 +34,6 @@ interface SearchPayload {
   products: ProductCard[];
 }
 
-interface CartLineRow {
-  lineId: string;
-  articleNumber: string;
-  quantity: number;
-  description: string;
-  brand: string | null;
-  unitText: string;
-  unitPrice: number;
-  lineTotal: number;
-  imageUrl: string;
-}
-
-interface CartOverview {
-  userName: string;
-  lines: CartLineRow[];
-  lineCount: number;
-  subtotalChf: number;
-}
-
-function formatChf(value: number): string {
-  return new Intl.NumberFormat("de-CH", { style: "currency", currency: "CHF" }).format(value);
-}
-
 function isSearchPayload(value: unknown): value is SearchPayload {
   return (
     Boolean(value) &&
@@ -57,16 +41,6 @@ function isSearchPayload(value: unknown): value is SearchPayload {
     typeof (value as SearchPayload).searchTerm === "string" &&
     Array.isArray((value as SearchPayload).products)
   );
-}
-
-function extractTextFromContentBlock(block: { text?: unknown }): string | null {
-  const t = block.text;
-  if (typeof t === "string") return t;
-  if (t && typeof t === "object" && "text" in t) {
-    const nested = (t as { text?: unknown }).text;
-    return typeof nested === "string" ? nested : null;
-  }
-  return null;
 }
 
 function parseSearchPayloadJson(raw: string): SearchPayload | null {
@@ -102,68 +76,6 @@ function getSearchPayloadFromToolResult(result: {
     }
   }
 
-  return null;
-}
-
-function isCartLineRow(value: unknown): value is CartLineRow {
-  if (!value || typeof value !== "object") return false;
-  const o = value as Record<string, unknown>;
-  return (
-    typeof o.lineId === "string" &&
-    typeof o.articleNumber === "string" &&
-    typeof o.quantity === "number" &&
-    typeof o.description === "string" &&
-    (o.brand === null || typeof o.brand === "string") &&
-    typeof o.unitText === "string" &&
-    typeof o.unitPrice === "number" &&
-    typeof o.lineTotal === "number" &&
-    typeof o.imageUrl === "string"
-  );
-}
-
-function isCartOverview(value: unknown): value is CartOverview {
-  if (!value || typeof value !== "object") return false;
-  const o = value as Record<string, unknown>;
-  if (
-    typeof o.userName !== "string" ||
-    typeof o.lineCount !== "number" ||
-    typeof o.subtotalChf !== "number" ||
-    !Array.isArray(o.lines)
-  ) {
-    return false;
-  }
-  return o.lines.every(isCartLineRow);
-}
-
-function parseCartOverviewFromText(raw: string): CartOverview | null {
-  let s = raw.trim();
-  const fence = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/m.exec(s);
-  if (fence) s = fence[1].trim();
-  try {
-    const parsed = JSON.parse(s) as unknown;
-    return isCartOverview(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function getCartOverviewFromToolResult(result: {
-  isError?: boolean;
-  structuredContent?: Record<string, unknown>;
-  content?: Array<{ type: string; text?: unknown }>;
-}): CartOverview | null {
-  if (result.isError) return null;
-  const sc = result.structuredContent;
-  if (sc && isCartOverview(sc)) return sc;
-
-  const textBlocks = result.content?.filter((c) => c.type === "text") ?? [];
-  for (const block of textBlocks) {
-    const raw = extractTextFromContentBlock(block);
-    if (raw) {
-      const parsed = parseCartOverviewFromText(raw);
-      if (parsed) return parsed;
-    }
-  }
   return null;
 }
 
@@ -339,82 +251,6 @@ function WebShopSearchView({
           Geben Sie einen Suchbegriff ein, oder öffnen Sie dieses Tool im Assistenten mit einer Abfrage.
         </p>
       ) : null}
-    </div>
-  );
-}
-
-function WebShopCartView({
-  cart,
-  cartBusy,
-  cartMessage,
-  onRemoveLine,
-  onFinalize,
-}: {
-  cart: CartOverview | null;
-  cartBusy: boolean;
-  cartMessage: string | null;
-  onRemoveLine: (lineId: string) => void;
-  onFinalize: () => void;
-}) {
-  return (
-    <div className={styles.viewPanel} role="tabpanel" aria-label="Warenkorb">
-      <section className={styles.cartSection} aria-labelledby="cart-heading">
-        <h3 className={styles.cartHeading} id="cart-heading">
-          Warenkorb
-          {cart ? (
-            <>
-              {" "}
-              · {cart.lineCount} {cart.lineCount === 1 ? "Position" : "Positionen"}
-            </>
-          ) : null}
-        </h3>
-        {cartMessage ? <div className={styles.error}>{cartMessage}</div> : null}
-        {cart === null ? (
-          <p className={styles.meta}>{cartBusy ? "Warenkorb wird geladen …" : "—"}</p>
-        ) : cart.lines.length === 0 ? (
-          <p className={styles.meta}>
-            Noch keine Artikel. Wechseln Sie zur Suche und legen Sie Produkte in den Warenkorb.
-          </p>
-        ) : (
-          <>
-            <ul className={styles.cartList}>
-              {cart.lines.map((line) => (
-                <li key={line.lineId} className={styles.cartLine}>
-                  <img className={styles.cartThumb} src={line.imageUrl} alt="" loading="lazy" />
-                  <div className={styles.cartLineBody}>
-                    <div className={styles.cartLineTitle}>{line.description}</div>
-                    <div className={styles.cartLineMeta}>
-                      Art. {line.articleNumber} · {line.quantity}× {line.unitText} à {formatChf(line.unitPrice)} →{" "}
-                      {formatChf(line.lineTotal)}
-                    </div>
-                  </div>
-                  <div className={styles.cartLineActions}>
-                    <button
-                      type="button"
-                      className={styles.removeLineButton}
-                      disabled={cartBusy}
-                      onClick={() => onRemoveLine(line.lineId)}
-                    >
-                      Entfernen
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className={styles.cartFooter}>
-              <span className={styles.cartTotal}>Total {formatChf(cart.subtotalChf)}</span>
-              <button
-                type="button"
-                className={styles.checkoutButton}
-                disabled={cartBusy || cart.lines.length === 0}
-                onClick={onFinalize}
-              >
-                Bestellung abschliessen (Mock)
-              </button>
-            </div>
-          </>
-        )}
-      </section>
     </div>
   );
 }

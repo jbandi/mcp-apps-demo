@@ -6,9 +6,30 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 
-const DIST_DIR = import.meta.filename.endsWith(".ts")
-  ? path.join(import.meta.dirname, "dist")
-  : import.meta.dirname;
+/**
+ * Vite legt die Bundles nach `dist/webshop/*.html` (Projektroot).
+ * - `tsx`/Quelle: diese Datei liegt in `webshop/` → `../dist/webshop`
+ * - `tsc`-Ausgabe: oft `dist/webshop/server.js` → Bundles liegen bereits in `import.meta.dirname`
+ */
+function webshopUiDistDir(): string {
+  const dir = import.meta.dirname;
+  const asPosix = dir.split(path.sep).join("/");
+  if (asPosix.endsWith("/dist/webshop") || asPosix.endsWith("dist/webshop")) {
+    return dir;
+  }
+  return path.resolve(dir, "..", "dist", "webshop");
+}
+
+const WEBSHOP_UI_DIST = webshopUiDistDir();
+
+const uiResourceMeta = {
+  connectDomains: ["https://web.transgourmet.ch"],
+  resourceDomains: [
+    "https://web.transgourmet.ch",
+    "https://webshop.transgourmet.ch",
+    "https://webpreview.transgourmet.ch",
+  ],
+} as const;
 
 const SEARCH_URL = "https://web.transgourmet.ch/de/webshop/resources/articles/search";
 const USER_AGENT = "MCP-Webshop-App (Demo)";
@@ -382,7 +403,8 @@ async function searchProducts(searchTerm: string): Promise<{ searchTerm: string;
 }
 
 function registerWebShopTools(server: McpServer): void {
-  const resourceUri = "ui://web-shop/web-shop-mcp-app.html";
+  const mainResourceUri = "ui://web-shop/web-shop-mcp-app.html";
+  const cartResourceUri = "ui://web-shop/web-shop-cart-mcp-app.html";
 
   registerAppTool(
     server,
@@ -398,7 +420,7 @@ function registerWebShopTools(server: McpServer): void {
           .describe("Suchbegriff für Produkt oder Kategorie (z. B. Milch, Kaffee)."),
       },
       outputSchema: webShopSearchOutputSchema,
-      _meta: { ui: { resourceUri } },
+      _meta: { ui: { resourceUri: mainResourceUri } },
     },
     async ({ searchTerm }) => {
       const payload = await searchProducts(searchTerm);
@@ -441,7 +463,7 @@ function registerWebShopTools(server: McpServer): void {
           .describe("Liste von Positionen; jede Position wird als eigene Warenkorbzeile hinzugefügt."),
       },
       outputSchema: webShopCartAddOutputSchema,
-      _meta: { ui: { resourceUri } },
+      _meta: { ui: { resourceUri: mainResourceUri } },
     },
     async ({ userName, items }) => {
       const lines = getOrCreateCartLines(userName);
@@ -492,7 +514,7 @@ function registerWebShopTools(server: McpServer): void {
           .describe("Alle Zeilen mit dieser Artikelnummer entfernen."),
       },
       outputSchema: webShopCartRemoveOutputSchema,
-      _meta: { ui: { resourceUri } },
+      _meta: { ui: { resourceUri: mainResourceUri } },
     },
     async ({ userName, lineId, articleNumber }) => {
       const hasLine = Boolean(lineId);
@@ -550,12 +572,13 @@ function registerWebShopTools(server: McpServer): void {
     "web-shop-cart-get",
     {
       title: "Webshop: Warenkorb anzeigen",
-      description: "Liefert alle Positionen, Mengen und Summen für den Warenkorb des Benutzers (Demo, im Speicher des MCP-Servers).",
+      description:
+        "Liefert alle Positionen, Mengen und Summen für den Warenkorb des Benutzers (Demo, im Speicher des MCP-Servers). Öffnet eine eigene Warenkorb-Oberfläche (nicht die Produktsuche).",
       inputSchema: {
         userName: z.string().min(1).describe("Benutzername dessen Warenkorb angezeigt werden soll."),
       },
       outputSchema: webShopCartGetOutputSchema,
-      _meta: { ui: { resourceUri } },
+      _meta: { ui: { resourceUri: cartResourceUri } },
     },
     async ({ userName }) => {
       const overview = getCartOverviewPayload(userName);
@@ -577,7 +600,7 @@ function registerWebShopTools(server: McpServer): void {
         userName: z.string().min(1),
       },
       outputSchema: webShopCartFinalizeOutputSchema,
-      _meta: { ui: { resourceUri } },
+      _meta: { ui: { resourceUri: mainResourceUri } },
     },
     async ({ userName }) => {
       const key = normalizeUserName(userName);
@@ -611,26 +634,41 @@ function registerWebShopTools(server: McpServer): void {
 
   registerAppResource(
     server,
-    resourceUri,
-    resourceUri,
+    mainResourceUri,
+    mainResourceUri,
     { mimeType: RESOURCE_MIME_TYPE },
     async (): Promise<ReadResourceResult> => {
-      const html = await fs.readFile(path.join(DIST_DIR, "app.html"), "utf-8");
+      const html = await fs.readFile(path.join(WEBSHOP_UI_DIST, "app.html"), "utf-8");
       return {
         contents: [
           {
-            uri: resourceUri,
+            uri: mainResourceUri,
             mimeType: RESOURCE_MIME_TYPE,
             text: html,
             _meta: {
-              ui: {
-                connectDomains: ["https://web.transgourmet.ch"],
-                resourceDomains: [
-                  "https://web.transgourmet.ch",
-                  "https://webshop.transgourmet.ch",
-                  "https://webpreview.transgourmet.ch",
-                ],
-              },
+              ui: uiResourceMeta,
+            },
+          },
+        ],
+      };
+    },
+  );
+
+  registerAppResource(
+    server,
+    cartResourceUri,
+    cartResourceUri,
+    { mimeType: RESOURCE_MIME_TYPE },
+    async (): Promise<ReadResourceResult> => {
+      const html = await fs.readFile(path.join(WEBSHOP_UI_DIST, "cart-app.html"), "utf-8");
+      return {
+        contents: [
+          {
+            uri: cartResourceUri,
+            mimeType: RESOURCE_MIME_TYPE,
+            text: html,
+            _meta: {
+              ui: uiResourceMeta,
             },
           },
         ],

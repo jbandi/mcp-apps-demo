@@ -95,15 +95,38 @@ function ProductCardView({ p }: { p: ProductCard }) {
     <article className={styles.card}>
       <div className={styles.imageWrap}>
         <img className={styles.image} src={p.imageUrl} alt="" loading="lazy" />
-        <div className={styles.badges}>
-          {p.isAction ? <span className={`${styles.badge} ${styles.badgeSale}`}>Aktion</span> : null}
-          {p.ecoScore ? <span className={styles.badge}>{p.ecoScore.text}</span> : null}
+        <div className={styles.imageOverlay}>
+          <div className={styles.badges}>
+            {p.isAction ? <span className={`${styles.badge} ${styles.badgeSale}`}>Aktion</span> : null}
+            {p.ecoScore ? <span className={styles.badge}>{p.ecoScore.text}</span> : null}
+          </div>
+          {p.icons.length > 0 ? (
+            <div className={styles.iconsOverlay}>
+              {p.icons.slice(0, 6).map((icon) => (
+                <img
+                  key={`${p.articleNumber}-${icon.title}-${icon.imgUrl}`}
+                  className={styles.icon}
+                  src={icon.imgUrl}
+                  alt={icon.title}
+                  title={icon.title}
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
       <div className={styles.body}>
         {p.brand ? <div className={styles.brand}>{p.brand}</div> : null}
         <h3 className={styles.title}>{p.description}</h3>
         <div className={styles.articleNo}>Art.Nr: {p.articleNumber}</div>
+        {p.icons.length > 0 ? (
+          <div className={styles.iconUrlsDebug} aria-label="Icon image URLs (debug)">
+            {p.icons.map((icon, idx) => (
+              <div key={`${p.articleNumber}-icon-url-${idx}`}>{icon.imgUrl}</div>
+            ))}
+          </div>
+        ) : null}
         <div className={styles.priceRow}>
           <span className={styles.price}>{formatChf(displayPrice)}</span>
           {showStrike ? (
@@ -125,20 +148,6 @@ function ProductCardView({ p }: { p: ProductCard }) {
             </>
           ) : null}
         </div>
-        {p.icons.length > 0 ? (
-          <div className={styles.icons}>
-            {p.icons.slice(0, 6).map((icon) => (
-              <img
-                key={`${p.articleNumber}-${icon.title}-${icon.imgUrl}`}
-                className={styles.icon}
-                src={icon.imgUrl}
-                alt={icon.title}
-                title={icon.title}
-                loading="lazy"
-              />
-            ))}
-          </div>
-        ) : null}
         {p.unavailable ? <div className={styles.unavailable}>Derzeit nicht verfügbar</div> : null}
       </div>
     </article>

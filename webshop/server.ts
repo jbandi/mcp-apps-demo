@@ -77,12 +77,34 @@ interface ProductCard {
   unavailable: boolean;
 }
 
+const WEB_ORIGIN = "https://web.transgourmet.ch";
+
 function resolveMediaUrl(imgSrc: string): string {
   if (imgSrc.startsWith("http://") || imgSrc.startsWith("https://")) {
     return imgSrc;
   }
   const p = imgSrc.startsWith("/") ? imgSrc : `/${imgSrc}`;
-  return `https://web.transgourmet.ch${p}`;
+  return `${WEB_ORIGIN}${p}`;
+}
+
+function resolveIconImgUrl(icon: ApiIcon): string {
+  if (!icon.id.toLowerCase().startsWith("ecoscore")) {
+    return resolveMediaUrl(icon.imgSrc);
+  }
+  const { imgSrc } = icon;
+  if (imgSrc.startsWith("http://") || imgSrc.startsWith("https://")) {
+    try {
+      const u = new URL(imgSrc);
+      if (u.hostname.includes("transgourmet.ch")) {
+        return `${WEB_ORIGIN}${u.pathname}${u.search}${u.hash}`;
+      }
+    } catch {
+      /* use fallback below */
+    }
+    return imgSrc;
+  }
+  const p = imgSrc.startsWith("/") ? imgSrc : `/${imgSrc}`;
+  return `${WEB_ORIGIN}${p}`;
 }
 
 function productImageUrl(celumId: number): string {
@@ -118,7 +140,7 @@ function mapArticle(a: ApiArticle): ProductCard {
     normalPrice: a.normalPrice,
     imageUrl: productImageUrl(a.celumId),
     ecoScore: a.ecoScore,
-    icons: (a.icons ?? []).map((i) => ({ title: i.title, imgUrl: resolveMediaUrl(i.imgSrc) })),
+    icons: (a.icons ?? []).map((i) => ({ title: i.title, imgUrl: resolveIconImgUrl(i) })),
     packLabel,
     pricePerPackLabel: pricePerPack ? `Pack: ${pricePerPack}` : "",
     comparisonLabel,
@@ -195,7 +217,10 @@ function registerWebShopTools(server: McpServer): void {
             _meta: {
               ui: {
                 connectDomains: ["https://web.transgourmet.ch"],
-                resourceDomains: ["https://web.transgourmet.ch", "https://webshop.transgourmet.ch"],
+                resourceDomains: [
+                  "https://web.transgourmet.ch",
+                  "https://webshop.transgourmet.ch",
+                ],
               },
             },
           },

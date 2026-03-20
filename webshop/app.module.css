@@ -110,10 +110,19 @@
   display: block;
 }
 
-.badges {
+.imageOverlay {
   position: absolute;
   top: 0.5rem;
   left: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  max-width: calc(100% - 1rem);
+  z-index: 1;
+}
+
+.badges {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
@@ -167,6 +176,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+.iconUrlsDebug {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.62rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+  word-break: break-all;
+  opacity: 0.9;
+}
+
 .priceRow {
   display: flex;
   flex-wrap: wrap;
@@ -193,11 +214,10 @@
   line-height: 1.4;
 }
 
-.icons {
+.iconsOverlay {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  margin-top: 0.25rem;
 }
 
 .icon {
@@ -207,6 +227,7 @@
   border-radius: 4px;
   background: var(--color-background-primary);
   border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .unavailable {

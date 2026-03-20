@@ -103,6 +103,7 @@ function ProductCardView({ p }: { p: ProductCard }) {
       <div className={styles.body}>
         {p.brand ? <div className={styles.brand}>{p.brand}</div> : null}
         <h3 className={styles.title}>{p.description}</h3>
+        <div className={styles.articleNo}>Art.Nr: {p.articleNumber}</div>
         <div className={styles.priceRow}>
           <span className={styles.price}>{formatChf(displayPrice)}</span>
           {showStrike ? (

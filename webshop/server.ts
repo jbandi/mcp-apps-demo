@@ -637,7 +637,7 @@ function registerWebShopTools(server: McpServer): void {
     mainResourceUri,
     { mimeType: RESOURCE_MIME_TYPE },
     async (): Promise<ReadResourceResult> => {
-      const html = await fs.readFile(path.join(WEBSHOP_UI_DIST, "app.html"), "utf-8");
+      const html = await fs.readFile(path.join(WEBSHOP_UI_DIST, "search-ui.html"), "utf-8");
       return {
         contents: [
           {

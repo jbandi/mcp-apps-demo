@@ -291,7 +291,7 @@ function WebShopApp() {
   const [payload, setPayload] = useState<SearchPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userName, setUserName] = useState("Gast");
+  const [userName, setUserName] = useState("guest");
   const [cart, setCart] = useState<CartOverview | null>(null);
   const [cartBusy, setCartBusy] = useState(false);
   const [cartMessage, setCartMessage] = useState<string | null>(null);
@@ -564,7 +564,7 @@ function WebShopApp() {
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
           autoComplete="username"
-          placeholder="z. B. Gast, Anna, …"
+          placeholder="z. B. guest, Anna, …"
         />
       </div>
 

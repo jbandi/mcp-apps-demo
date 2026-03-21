@@ -7,7 +7,7 @@ import styles from "./cart-ui.module.css";
 import { WebShopCartView } from "./WebShopCartView";
 
 function WebShopCartApp() {
-  const [userName, setUserName] = useState("Gast");
+  const [userName, setUserName] = useState("guest");
   const [cart, setCart] = useState<CartOverview | null>(null);
   const [cartBusy, setCartBusy] = useState(false);
   const [cartMessage, setCartMessage] = useState<string | null>(null);
@@ -173,7 +173,7 @@ function WebShopCartApp() {
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
           autoComplete="username"
-          placeholder="z. B. Gast, Anna, …"
+          placeholder="z. B. guest, Anna, …"
         />
       </div>
 

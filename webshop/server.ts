@@ -158,6 +158,12 @@ function normalizeUserName(userName: string): string {
   return userName.trim();
 }
 
+/** Wenn der Host keinen Benutzernamen sendet oder er leer ist: `guest`. */
+function resolveMcpUserName(userName: string | undefined): string {
+  const t = (userName ?? "").trim();
+  return t || "guest";
+}
+
 function getOrCreateCartLines(userName: string): CartLine[] {
   const key = normalizeUserName(userName);
   if (!key) {
@@ -427,6 +433,12 @@ function registerWebShopTools(server: McpServer): void {
           .string()
           .min(1)
           .describe("Suchbegriff für Produkt oder Kategorie (z. B. Milch, Kaffee)."),
+        userName: z
+          .string()
+          .optional()
+          .describe(
+            "Benutzername für den Warenkorb-Kontext in der Oberfläche; wenn nicht angegeben oder leer: `guest`.",
+          ),
       },
       outputSchema: webShopSearchOutputSchema,
       _meta: { ui: { resourceUri: mainResourceUri } },
@@ -457,7 +469,12 @@ function registerWebShopTools(server: McpServer): void {
       description:
         "Legt eine oder mehrere Positionen in den Warenkorb des angegebenen Benutzers. Pro Eintrag entsteht eine eigene Zeile (gleiche Artikelnummer kann mehrfach vorkommen). Artikelstammdaten werden per Detail-API geladen.",
       inputSchema: {
-        userName: z.string().min(1).describe("Benutzername; pro Name existiert ein eigener Warenkorb."),
+        userName: z
+          .string()
+          .optional()
+          .describe(
+            "Benutzername; pro Name existiert ein eigener Warenkorb. Wenn nicht angegeben oder leer: `guest`.",
+          ),
         items: z
           .array(
             z.object({
@@ -476,8 +493,8 @@ function registerWebShopTools(server: McpServer): void {
       _meta: { ui: { resourceUri: mainResourceUri } },
     },
     async ({ userName, items }) => {
-      const lines = getOrCreateCartLines(userName);
-      const key = normalizeUserName(userName);
+      const key = resolveMcpUserName(userName);
+      const lines = getOrCreateCartLines(key);
       const added: { lineId: string; articleNumber: string; quantity: number }[] = [];
 
       for (const item of items) {
@@ -515,7 +532,10 @@ function registerWebShopTools(server: McpServer): void {
       description:
         "Entfernt Warenkorbzeilen: entweder eine konkrete Zeile per lineId (von web-shop-cart-get) oder alle Zeilen zu einer Artikelnummer.",
       inputSchema: {
-        userName: z.string().min(1),
+        userName: z
+          .string()
+          .optional()
+          .describe("Wenn nicht angegeben oder leer: `guest`."),
         lineId: z.string().min(1).optional().describe("Eine bestimmte Zeile entfernen."),
         articleNumber: z
           .string()
@@ -541,7 +561,7 @@ function registerWebShopTools(server: McpServer): void {
         };
       }
 
-      const key = normalizeUserName(userName);
+      const key = resolveMcpUserName(userName);
       const lines = shoppingCarts.get(key);
       const removedLineIds: string[] = [];
 
@@ -585,13 +605,18 @@ function registerWebShopTools(server: McpServer): void {
       description:
         "Liefert alle Positionen, Mengen und Summen für den Warenkorb des Benutzers (Demo, im Speicher des MCP-Servers). Öffnet eine eigene Warenkorb-Oberfläche (nicht die Produktsuche).",
       inputSchema: {
-        userName: z.string().min(1).describe("Benutzername dessen Warenkorb angezeigt werden soll."),
+        userName: z
+          .string()
+          .optional()
+          .describe(
+            "Benutzername dessen Warenkorb angezeigt werden soll. Wenn nicht angegeben oder leer: `guest`.",
+          ),
       },
       outputSchema: webShopCartGetOutputSchema,
       _meta: { ui: { resourceUri: cartResourceUri } },
     },
     async ({ userName }) => {
-      const overview = getCartOverviewPayload(userName);
+      const overview = getCartOverviewPayload(resolveMcpUserName(userName));
       return {
         structuredContent: overview,
         content: [{ type: "text", text: JSON.stringify(overview) }],
@@ -607,13 +632,16 @@ function registerWebShopTools(server: McpServer): void {
       description:
         "Schliesst den Warenkorb mock-mässig ab: generiert eine Bestellreferenz, gibt die Positionen zurück und leert den Warenkorb. Kein echter Auftrag bei Transgourmet.",
       inputSchema: {
-        userName: z.string().min(1),
+        userName: z
+          .string()
+          .optional()
+          .describe("Wenn nicht angegeben oder leer: `guest`."),
       },
       outputSchema: webShopCartFinalizeOutputSchema,
       _meta: { ui: { resourceUri: mainResourceUri } },
     },
     async ({ userName }) => {
-      const key = normalizeUserName(userName);
+      const key = resolveMcpUserName(userName);
       const lines = shoppingCarts.get(key);
       if (!lines?.length) {
         return {

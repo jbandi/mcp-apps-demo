@@ -71,7 +71,7 @@ export function WebShopCartView({
                 disabled={cartBusy || cart.lines.length === 0}
                 onClick={onFinalize}
               >
-                Bestellung abschliessen (Mock)
+                Bestellung abschliessen
               </button>
             </div>
           </>

@@ -31,6 +31,8 @@ interface ProductCard {
 
 interface SearchPayload {
   searchTerm: string;
+  /** Gesamtzahl der Treffer laut Suche (kann grösser sein als angezeigte `products`). */
+  totalCount?: number;
   products: ProductCard[];
 }
 
@@ -251,8 +253,9 @@ function WebShopSearchView({
 
       {payload ? (
         <p className={styles.meta}>
-          {payload.products.length}{" "}
-          {payload.products.length === 1 ? "Ergebnis" : "Ergebnisse"} für &ldquo;
+          {(payload.totalCount ?? payload.products.length)}{" "}
+          {(payload.totalCount ?? payload.products.length) === 1 ? "Ergebnis" : "Ergebnisse"} für
+          &ldquo;
           {payload.searchTerm}&rdquo;
         </p>
       ) : null}

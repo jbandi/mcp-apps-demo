@@ -38,6 +38,8 @@ const MAX_PRODUCT_RESULTS = 10;
 /** Damit Hosts (z. B. ChatGPT) strukturierte Tool-Ausgaben an die MCP-App hängen können; `content` bleibt fürs Modell. */
 const webShopSearchOutputSchema = z.object({
   searchTerm: z.string(),
+  /** Gesamtzahl der Treffer laut API (kann grösser sein als `products.length`). */
+  totalCount: z.number(),
   products: z.array(z.unknown()),
 });
 
@@ -126,7 +128,7 @@ interface ApiArticle {
 }
 
 interface ApiSearchPayload {
-  searchResponse?: { articles?: ApiArticle[] };
+  searchResponse?: { articles?: ApiArticle[]; totalCount?: number };
 }
 
 interface ApiArticleDetailPayload {
@@ -380,7 +382,11 @@ function getCartOverviewPayload(userName: string): z.infer<typeof webShopCartGet
   };
 }
 
-async function searchProducts(searchTerm: string): Promise<{ searchTerm: string; products: ProductCard[] }> {
+async function searchProducts(searchTerm: string): Promise<{
+  searchTerm: string;
+  totalCount: number;
+  products: ProductCard[];
+}> {
   const url = new URL(SEARCH_URL);
   url.searchParams.set("searchTerm", searchTerm.trim());
   const res = await fetch(url, {
@@ -393,10 +399,14 @@ async function searchProducts(searchTerm: string): Promise<{ searchTerm: string;
     throw new Error(`Suche fehlgeschlagen: ${res.status}`);
   }
   const data = (await res.json()) as ApiSearchPayload;
-  const raw = (data.searchResponse?.articles ?? []).slice(0, MAX_PRODUCT_RESULTS);
+  const articles = data.searchResponse?.articles ?? [];
+  const totalCount =
+    typeof data.searchResponse?.totalCount === "number" ? data.searchResponse.totalCount : articles.length;
+  const raw = articles.slice(0, MAX_PRODUCT_RESULTS);
   const products = await inlineSvgIconsInProducts(raw.map(mapArticle));
   return {
     searchTerm: searchTerm.trim(),
+    totalCount,
     products,
   };
 }
@@ -426,6 +436,7 @@ function registerWebShopTools(server: McpServer): void {
       return {
         structuredContent: {
           searchTerm: payload.searchTerm,
+          totalCount: payload.totalCount,
           products: payload.products,
         },
         content: [

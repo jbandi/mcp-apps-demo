@@ -79,66 +79,33 @@ function getSearchPayloadFromToolResult(result: {
   return null;
 }
 
-function ProductCardView({ p }: { p: ProductCard }) {
-  const displayPrice = p.isAction && p.actionPrice != null ? p.actionPrice : p.price;
-  const showStrike =
-    p.isAction && p.oldPrice > 0 && p.oldPrice > displayPrice;
+/** Öffnet die Artikel-Detailseite im öffentlichen Webshop. */
+function articleCatalogUrl(articleNumber: string): string {
+  const num = encodeURIComponent(articleNumber.trim());
+  return `https://web.transgourmet.ch/de/webshop/catalog/article/${num}`;
+}
 
+function formatUnitLine(p: ProductCard): string {
+  const parts = [p.packLabel, p.pricePerPackLabel, p.comparisonLabel].filter(Boolean) as string[];
+  return parts.join(" · ");
+}
+
+function CartIcon() {
   return (
-    <article className={styles.card}>
-      <div className={styles.imageWrap}>
-        <img className={styles.image} src={p.imageUrl} alt="" loading="lazy" />
-        <div className={styles.imageOverlay}>
-          {p.icons.length > 0 ? (
-            <div className={styles.iconsOverlay}>
-              {p.icons.slice(0, 6).map((icon) => (
-                <img
-                  key={`${p.articleNumber}-${icon.title}-${icon.imgUrl}`}
-                  className={styles.icon}
-                  src={icon.imgUrl}
-                  alt={icon.title}
-                  title={icon.title}
-                  loading="lazy"
-                />
-              ))}
-            </div>
-          ) : null}
-          {p.isAction || p.ecoScore ? (
-            <div className={styles.badges}>
-              {p.isAction ? <span className={`${styles.badge} ${styles.badgeSale}`}>Aktion</span> : null}
-              {p.ecoScore ? <span className={styles.badge}>{p.ecoScore.text}</span> : null}
-            </div>
-          ) : null}
-        </div>
-      </div>
-      <div className={styles.body}>
-        {p.brand ? <div className={styles.brand}>{p.brand}</div> : null}
-        <h3 className={styles.title}>{p.description}</h3>
-        <div className={styles.articleNo}>Art.Nr: {p.articleNumber}</div>
-        <div className={styles.priceRow}>
-          <span className={styles.price}>{formatChf(displayPrice)}</span>
-          {showStrike ? (
-            <span className={styles.oldPrice}>{formatChf(p.oldPrice)}</span>
-          ) : null}
-        </div>
-        <div className={styles.unitMeta}>
-          <span>{p.packLabel}</span>
-          {p.pricePerPackLabel ? (
-            <>
-              <br />
-              <span>{p.pricePerPackLabel}</span>
-            </>
-          ) : null}
-          {p.comparisonLabel ? (
-            <>
-              <br />
-              <span>{p.comparisonLabel}</span>
-            </>
-          ) : null}
-        </div>
-        {p.unavailable ? <div className={styles.unavailable}>Derzeit nicht verfügbar</div> : null}
-      </div>
-    </article>
+    <svg
+      className={styles.cartIconSvg}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
   );
 }
 
@@ -152,34 +119,95 @@ function ProductWithCartActions({
   onAdd: (articleNumber: string, quantity: number) => void;
 }) {
   const [qty, setQty] = useState(1);
+  const displayPrice = p.isAction && p.actionPrice != null ? p.actionPrice : p.price;
+  const showStrike =
+    p.isAction && p.oldPrice > 0 && p.oldPrice > displayPrice;
+  const unitLine = formatUnitLine(p);
 
   return (
-    <div className={styles.cardWrap}>
-      <ProductCardView p={p} />
-      <div className={styles.cardActions}>
-        <label htmlFor={`qty-${p.articleNumber}`} className={styles.meta}>
-          Menge
-        </label>
-        <input
-          id={`qty-${p.articleNumber}`}
-          className={styles.qtyInput}
-          type="number"
-          min={1}
-          step={1}
-          value={qty}
-          onChange={(e) => setQty(Math.max(1, Number.parseInt(e.target.value, 10) || 1))}
-          disabled={disabled || p.unavailable}
-        />
-        <button
-          type="button"
-          className={styles.addCartButton}
-          disabled={disabled || p.unavailable}
-          onClick={() => onAdd(p.articleNumber, qty)}
-        >
-          In den Warenkorb
-        </button>
+    <article className={styles.cardWrap}>
+      <div className={styles.imageCol}>
+        <div className={styles.imageWrap}>
+          <img className={styles.image} src={p.imageUrl} alt="" loading="lazy" />
+        </div>
       </div>
-    </div>
+
+      <div className={styles.cardBody}>
+        <div className={styles.badgeRow}>
+          <span className={styles.articlePill} title="Artikelnummer">
+            {p.articleNumber}
+          </span>
+          {p.icons.length > 0 ? (
+            <div className={styles.iconsRow}>
+              {p.icons.slice(0, 6).map((icon) => (
+                <img
+                  key={`${p.articleNumber}-${icon.title}-${icon.imgUrl}`}
+                  className={styles.icon}
+                  src={icon.imgUrl}
+                  alt={icon.title}
+                  title={icon.title}
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          ) : null}
+          {p.isAction ? (
+            <span className={`${styles.badge} ${styles.badgeSale}`}>Aktion</span>
+          ) : null}
+          {p.ecoScore ? <span className={styles.badgeEco}>{p.ecoScore.text}</span> : null}
+        </div>
+        {p.brand ? <div className={styles.brand}>{p.brand}</div> : null}
+        <h3 className={styles.title}>{p.description}</h3>
+        {unitLine ? <div className={styles.unitMeta}>{unitLine}</div> : null}
+        {p.unavailable ? <div className={styles.unavailable}>Derzeit nicht verfügbar</div> : null}
+      </div>
+
+      <div className={styles.cardRight}>
+        <div className={styles.cardPriceBlock}>
+          <div className={styles.priceRow}>
+            <span className={styles.price}>{formatChf(displayPrice)}</span>
+            {showStrike ? (
+              <span className={styles.oldPrice}>{formatChf(p.oldPrice)}</span>
+            ) : null}
+          </div>
+        </div>
+        <div className={styles.cardRightBottom}>
+          <label className={styles.qtyRow} htmlFor={`qty-${p.articleNumber}`}>
+            <span className={styles.qtyRowLabel}>Menge</span>
+            <input
+              id={`qty-${p.articleNumber}`}
+              className={styles.qtyInput}
+              type="number"
+              min={1}
+              step={1}
+              value={qty}
+              onChange={(e) => setQty(Math.max(1, Number.parseInt(e.target.value, 10) || 1))}
+              disabled={disabled || p.unavailable}
+            />
+          </label>
+          <div className={styles.cardButtonRow}>
+            <a
+              className={styles.detailsButton}
+              href={articleCatalogUrl(p.articleNumber)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Details
+            </a>
+            <button
+              type="button"
+              className={styles.addCartButton}
+              disabled={disabled || p.unavailable}
+              onClick={() => onAdd(p.articleNumber, qty)}
+              aria-label="In den Warenkorb"
+              title="In den Warenkorb"
+            >
+              <CartIcon />
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 

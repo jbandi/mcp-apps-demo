@@ -193,10 +193,6 @@ interface ProductCard {
 }
 
 const WEB_ORIGIN = "https://web.transgourmet.ch";
-const WEBPREVIEW_ORIGIN = "https://webpreview.transgourmet.ch";
-
-/** Obergrenze für SVG-Grösse pro Icon beim Einbetten für MCP-Iframes (verhindert riesige Payloads). */
-const MAX_INLINE_SVG_BYTES = 256 * 1024;
 
 function resolveMediaUrl(imgSrc: string): string {
   if (imgSrc.startsWith("http://") || imgSrc.startsWith("https://")) {
@@ -221,7 +217,7 @@ function resolveIconImgUrl(icon: ApiIcon): string {
     try {
       const u = new URL(imgSrc);
       if (u.hostname.includes("transgourmet.ch")) {
-        return `${WEBPREVIEW_ORIGIN}${u.pathname}${u.search}${u.hash}`;
+        return `${WEB_ORIGIN}${u.pathname}${u.search}${u.hash}`;
       }
     } catch {
       /* use fallback below */
@@ -229,9 +225,12 @@ function resolveIconImgUrl(icon: ApiIcon): string {
     return imgSrc;
   }
   const p = imgSrc.startsWith("/") ? imgSrc : `/${imgSrc}`;
-  return `${WEBPREVIEW_ORIGIN}${p}`;
+  return `${WEB_ORIGIN}${p}`;
 }
 
+
+/** Obergrenze für SVG-Grösse pro Icon beim Einbetten für MCP-Iframes (verhindert riesige Payloads). */
+const MAX_INLINE_SVG_BYTES = 256 * 1024;
 /**
  * ChatGPT und andere MCP-Hosts laufen in einem abgeschotteten Iframe. Cross-Origin-SVGs in <img>
  * schlagen oft fehl (strenges img-src und/oder CORP), obwohl dieselbe URL im normalen Tab funktioniert.

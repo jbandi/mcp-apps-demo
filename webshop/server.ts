@@ -659,7 +659,7 @@ function registerWebShopTools(server: McpServer): void {
     cartResourceUri,
     { mimeType: RESOURCE_MIME_TYPE },
     async (): Promise<ReadResourceResult> => {
-      const html = await fs.readFile(path.join(WEBSHOP_UI_DIST, "cart-app.html"), "utf-8");
+      const html = await fs.readFile(path.join(WEBSHOP_UI_DIST, "cart-ui.html"), "utf-8");
       return {
         contents: [
           {

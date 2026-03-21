@@ -1,5 +1,5 @@
 import { formatChf, type CartOverview } from "./cart-model";
-import styles from "./search-ui.module.css";
+import styles from "./cart-ui.module.css";
 
 const defaultEmptyMessage =
   "Noch keine Artikel. Wechseln Sie zur Suche und legen Sie Produkte in den Warenkorb.";

@@ -7,7 +7,7 @@ import {
   formatChf,
   getCartOverviewFromToolResult,
 } from "./cart-model";
-import styles from "./search-ui.module.css";
+import styles from "./cart-ui.module.css";
 import { WebShopCartView } from "./WebShopCartView";
 
 interface ProductCard {

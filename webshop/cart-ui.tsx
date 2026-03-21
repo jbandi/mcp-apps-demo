@@ -3,7 +3,7 @@ import { StrictMode, useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type { CartOverview } from "./cart-model";
 import { getCartOverviewFromToolResult } from "./cart-model";
-import styles from "./search-ui.module.css";
+import styles from "./cart-ui.module.css";
 import { WebShopCartView } from "./WebShopCartView";
 
 function WebShopCartApp() {

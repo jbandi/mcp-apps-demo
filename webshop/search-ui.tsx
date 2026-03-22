@@ -232,6 +232,15 @@ function WebShopSearchView({
   addToCartDisabled: boolean;
   onAddToCart: (articleNumber: string, quantity: number) => void;
 }) {
+  const [showAllSearchResults, setShowAllSearchResults] = useState(false);
+
+  useEffect(() => {
+    setShowAllSearchResults(false);
+  }, [payload?.searchTerm]);
+
+  const visibleProducts =
+    payload && !showAllSearchResults ? payload.products.slice(0, 3) : payload?.products ?? [];
+
   return (
     <div className={styles.viewPanel} role="tabpanel" aria-label="Produktsuche">
       <form className={styles.searchRow} onSubmit={onSubmit}>
@@ -265,16 +274,29 @@ function WebShopSearchView({
       ) : null}
 
       {payload && payload.products.length > 0 ? (
-        <div className={styles.grid}>
-          {payload.products.map((p) => (
-            <ProductWithCartActions
-              key={p.articleNumber}
-              p={p}
-              disabled={addToCartDisabled}
-              onAdd={onAddToCart}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles.grid}>
+            {visibleProducts.map((p) => (
+              <ProductWithCartActions
+                key={p.articleNumber}
+                p={p}
+                disabled={addToCartDisabled}
+                onAdd={onAddToCart}
+              />
+            ))}
+          </div>
+          {payload.products.length > 3 && !showAllSearchResults ? (
+            <div className={styles.showMoreRow}>
+              <button
+                type="button"
+                className={styles.detailsButton}
+                onClick={() => setShowAllSearchResults(true)}
+              >
+                render more
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       {!payload && !loading && !error ? (

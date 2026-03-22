@@ -161,20 +161,12 @@ function WebShopCartApp() {
 
   return (
     <main className={styles.main}>
-      <h2 className={styles.heading}>Transgourmet Webshop</h2>
-      <p className={styles.subtitle}>Im Schweizer Grosshandels-Sortiment suchen</p>
-
-      <div className={styles.userRow}>
-        <label htmlFor="webshop-user">Benutzername (eigener Warenkorb)</label>
-        <input
-          id="webshop-user"
-          className={styles.userInput}
-          type="text"
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          autoComplete="username"
-          placeholder="z. B. guest, Anna, …"
-        />
+      <div className={styles.mainHeader}>
+        <h2 className={`${styles.heading} ${styles.headingBrand}`}>Transgourmet Webshop</h2>
+        <p className={styles.userDisplay}>
+          <span className={styles.userDisplayLabel}>username</span>
+          <span className={styles.userDisplayValue}>{userName}</span>
+        </p>
       </div>
 
       {lastOrderId ? (

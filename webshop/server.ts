@@ -427,12 +427,14 @@ function registerWebShopTools(server: McpServer): void {
     {
       title: "Transgourmet-Webshopsuche",
       description:
-        "Durchsucht den Transgourmet-Webshop (Schweiz) nach Artikeln per Stichwort. Öffnet ein interaktives Produktraster; die Ergebnisse werden zusätzlich als strukturiertes JSON für die Unterhaltung zurückgegeben.",
+        "Durchsucht den Transgourmet-Webshop (Schweiz) nach Artikeln per Stichwort (optional; ohne Angabe wird «Tomate» gesucht). Öffnet ein interaktives Produktraster; die Ergebnisse werden zusätzlich als strukturiertes JSON für die Unterhaltung zurückgegeben.",
       inputSchema: {
         searchTerm: z
           .string()
-          .min(1)
-          .describe("Suchbegriff für Produkt oder Kategorie (z. B. Milch, Kaffee)."),
+          .optional()
+          .describe(
+            "Optionaler Suchbegriff für Produkt oder Kategorie (z. B. Milch, Kaffee). Wenn nicht angegeben oder leer, wird «Tomate» verwendet.",
+          ),
         userName: z
           .string()
           .optional()
@@ -444,7 +446,8 @@ function registerWebShopTools(server: McpServer): void {
       _meta: { ui: { resourceUri: mainResourceUri } },
     },
     async ({ searchTerm }) => {
-      const payload = await searchProducts(searchTerm);
+      const term = searchTerm?.trim() ? searchTerm.trim() : "Tomate";
+      const payload = await searchProducts(term);
       return {
         structuredContent: {
           searchTerm: payload.searchTerm,

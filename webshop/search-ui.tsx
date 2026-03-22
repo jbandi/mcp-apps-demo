@@ -527,11 +527,38 @@ function WebShopApp() {
   return (
     <main className={styles.main}>
       <div className={styles.mainHeader}>
-        <h2 className={`${styles.heading} ${styles.headingBrand}`}>Transgourmet Webshop</h2>
-        <p className={styles.userDisplay}>
-          <span className={styles.userDisplayLabel}>username</span>
-          <span className={styles.userDisplayValue}>{userName}</span>
-        </p>
+        <div className={styles.mainHeaderTop}>
+          <h2 className={`${styles.heading} ${styles.headingBrand}`}>Transgourmet Webshop</h2>
+          <p className={styles.userDisplay}>
+            <span className={styles.userDisplayLabel}>username</span>
+            <span className={styles.userDisplayValue}>{userName}</span>
+          </p>
+          <div className={`${styles.viewTabs} ${styles.viewTabsHeader}`} role="tablist" aria-label="Ansicht wechseln">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === "search"}
+              className={`${styles.viewTab} ${activeView === "search" ? styles.viewTabActive : ""}`}
+              onClick={() => setActiveView("search")}
+            >
+              Suche
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === "cart"}
+              className={`${styles.viewTab} ${activeView === "cart" ? styles.viewTabActive : ""}`}
+              onClick={() => setActiveView("cart")}
+            >
+              Warenkorb
+              {cartCount > 0 ? (
+                <span className={styles.viewTabBadge} aria-hidden>
+                  {cartCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
+        </div>
       </div>
 
       {lastOrderId ? (
@@ -560,32 +587,6 @@ function WebShopApp() {
           onFinalize={() => void finalizeOrder()}
         />
       )}
-
-      <div className={styles.viewTabs} role="tablist" aria-label="Ansicht wechseln">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeView === "search"}
-          className={`${styles.viewTab} ${activeView === "search" ? styles.viewTabActive : ""}`}
-          onClick={() => setActiveView("search")}
-        >
-          Suche
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeView === "cart"}
-          className={`${styles.viewTab} ${activeView === "cart" ? styles.viewTabActive : ""}`}
-          onClick={() => setActiveView("cart")}
-        >
-          Warenkorb
-          {cartCount > 0 ? (
-            <span className={styles.viewTabBadge} aria-hidden>
-              {cartCount}
-            </span>
-          ) : null}
-        </button>
-      </div>
     </main>
   );
 }
